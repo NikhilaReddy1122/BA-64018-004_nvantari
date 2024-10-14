@@ -1,0 +1,149 @@
+---
+title: "A3_QMM_Transportation_model"
+author: "Nikhila Reddy Vantari"
+date: "2024-10-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question:
+
+Heart Start produces automated external defibrillators (AEDs) in each of two different plants (A
+and B). The unit production costs and monthly production capacity of the two plants are
+indicated in the table below. The AEDs are sold through three wholesalers. The shipping cost
+from each plant to the warehouse of each wholesaler along with the monthly demand from each
+wholesaler are also indicated in the table. How many AEDs should be produced in each plant,
+and how should they be distributed to each of the three wholesaler warehouses so as to minimize
+the combined cost of production and shipping?
+
+
+```{r}
+# Load packages - lp solve
+library(lpSolve)
+```
+
+
+```{r}
+#Formatting a data frame for all capacities and production costs
+t.data <- data.frame(Warehouse_1 = c("$22", "$16", 80),
+                     Warehouse_2 = c("$14", "$20", 60),
+                     Warehouse_3 = c("$30", "$24", 70),
+                     Unit_production_cost = c("$600", "$625", " "),
+                     Monthly_production_capacity = c(100, 120, " "))
+rownames(t.data) <- c("Plant A", "Plant B", "Monthly Demand")
+
+
+library(knitr)
+library(kableExtra)
+
+t.data %>%
+  kable() %>%
+  kable_classic() %>%
+  column_spec(1, border_right = TRUE) %>%
+  column_spec(4, border_right = TRUE) %>%
+  row_spec(2, extra_css = "border-bottom:dotted") %>%
+  add_header_above(header = c(" " = 1, "Unit Shipping Cost" = 3, " " = 2))
+```
+
+
+
+## Decision Variables:
+
+aij as the quantity transported from Plant A to Warehouse j (j = 1, 2, 3)
+bij as the quantity transported from Plant B to Warehouse j (j = 1, 2, 3)
+
+
+## Objective Function:
+Our goal is to minimize total expenses, including both manufacturing and transportation costs:
+
+Minimize T = (600 + 22)a1 + (600 + 14)a2 + (600 + 30)a3 +
+(625 + 16)b1 + (625 + 20)b2 + (625 + 24)b3
+This can be simplified to:
+Minimize T = 622a1 + 614a2 + 630a3 + 641b1 + 645b2 + 649b3
+
+## Constraints:
+### Supply Limitations:
+
+
+Plant A: a1 + a2 + a3 ≤ 100
+Plant B: b1 + b2 + b3 ≤ 120
+
+### Demand Requirements:
+
+Warehouse 1: a1 + b1 = 80
+Warehouse 2: a2 + b2 = 60
+Warehouse 3: a3 + b3 = 70
+
+### Non-Negative Quantities:
+a1, a2, a3, b1, b2, b3 ≥ 0
+
+
+
+```{r}
+#Formulating the shipping costs
+costs_for_shipping <- c(600 + 22, 600 + 14, 600 + 30, 
+           625 + 16, 625 + 20, 625 + 24)
+```
+
+
+```{r}
+#Constraints in matrix
+constraints <- matrix(c(1, 1, 1, 0, 0, 0,   # Capacity for Factory 1
+                              0, 0, 0, 1, 1, 1,   # Capacity for Factory 2
+                              1, 0, 0, 1, 0, 0,   # Demand for Warehouse A
+                              0, 1, 0, 0, 1, 0,   # Demand for Warehouse B
+                              0, 0, 1, 0, 0, 1),  # Demand for Warehouse C
+                            nrow = 5, byrow = TRUE)
+```
+
+
+```{r}
+#Establishing RHS values
+rhs_values <- c(100, 120, 80, 60, 70)
+```
+
+
+```{r}
+# Define the direction of each constraint (<= for capacities, >= for demands)
+constraint_direction <- c("<=", "<=", ">=", ">=", ">=")
+
+```
+
+
+```{r}
+# Solve the transportation problem using lp()
+result <- lp("min", costs_for_shipping, constraints, constraint_direction, rhs_values)
+```
+
+
+```{r}
+if (result$status == 0) {
+  # If an optimal solution is found, display the results
+  cat("Optimal solution found:\n")
+  result$solution_matrix <- matrix(result$solution, nrow = 2, byrow = TRUE)
+  rownames(result$solution_matrix) <- c("Factory 1", "Factory 2")
+  colnames(result$solution_matrix) <- c("Warehouse A", "Warehouse B", "Warehouse C")
+  print(result$solution_matrix)
+}
+```
+```{r}
+# Showcasing the output results for individual plants
+total_plant_A <- sum(result$solution_matrix[1, ])
+print(paste("Number of AEDs to be produced by plant 1: ", total_plant_A))
+
+total_plant_B <- sum(result$solution_matrix[2, ])
+print(paste("Number of AEDs to be produced by plant 2: ", total_plant_B))
+```
+
+
+```{r}
+# Print the total minimized cost
+print(paste("Minimum total cost:", result$objval))
+```
+
+## Conclusion:
+
+Based on the transportation model optimization, the most cost-effective solution for Heart Start's AED production and distribution is as follows: Plant A should produce 100 AEDs, operating at full capacity, with 60 units shipped to Warehouse B and 40 units to Warehouse C. Plant B should produce 110 AEDs, slightly under its maximum capacity of 120, distributing 80 units to Warehouse A and 30 units to Warehouse C. This distribution strategy satisfies all demand requirements: 80 units for Warehouse A, 60 for Warehouse B, and 70 for Warehouse C. By implementing this optimal plan, Heart Start can minimize its combined production and shipping costs to $132,790, ensuring efficient resource utilization and meeting all wholesaler demands.
