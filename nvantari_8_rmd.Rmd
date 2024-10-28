@@ -1,0 +1,214 @@
+---
+title: "QMM_ASSIGNMENT"
+author: "NIKHILA REDDY"
+date: "2024-10-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+### Loading required libraries for DEA analysis
+library(htmltools)
+library(Benchmarking)
+library (knitr)
+```
+
+
+```{r}
+#Creating Facility data frame
+ data <- data.frame(
+ DMU = c("Facility 1", "Facility 2", "Facility 3", "Facility 4", "Facility 5", "Facility 6"), 
+Staff_hours_per_day = c(150, 400, 320, 520, 350, 320), 
+Supplies_per_day = c(0.2, 0.7, 1.2, 2.0 , 1.2, 0.7),
+ Reimbursed_patient_days = c(14000, 14000, 42000, 28000, 19000, 14000),
+ Privately_paid_patient_days = c(3500, 21000, 10500, 42000, 25000, 15000)
+ )
+```
+
+```{r}
+#Formating Facility data
+ kable(data, format = "pandoc", caption = "Hope Valley Health Care Association ")
+```
+ 
+```{r}
+## Creating input matrix for DEA analysis
+ x <- matrix(c(150, 400, 320, 520, 350, 320,
+ 0.2, 0.7, 1.2, 2.0, 1.2, 0.7), ncol = 2)
+ colnames(x) <- c('Staffing Labor', 'Cost of Supplies')
+```
+ 
+```{r}
+### Creating output matrix for DEA analysis
+ y <-matrix(c(14, 14, 42, 28, 19, 14,
+            3.500,21,10,42,25,15),ncol=2) * 1000
+ colnames(y) <-c('Reimbursedbythird-party', 'Reimbursedprivately')
+```
+
+```{r}
+##```{r}
+# Performing DEA analysis with FDH model
+A <-dea(x,y,RTS="fdh")
+A
+```
+
+```{r}
+##Identifying efficient peers
+peers(A)
+```
+
+```{r}
+##Calculating lambda values
+lambda(A)
+```
+
+
+```{r}
+##Plotting DEA results
+dea.plot(x,y,RTS="fdh",ORIENTATION="in-out",txt=rownames(x))
+```
+
+```{r}
+##Performing CRS DEA analysis
+ B <-dea(x,y,RTS="crs")
+ B
+```
+
+```{r}
+##Identifying efficient peers
+peers(B)
+```
+
+```{r}
+##Calculating lambda values
+lambda(B)
+```
+
+
+```{r}
+####Plotting DEA results
+ dea.plot(x,y,RTS="crs",ORIENTATION="in-out",txt=rownames(x))
+```
+
+```{r}
+##Performing VRS DEA analysis
+ C<-dea(x,y,RTS="vrs")
+ C 
+```
+
+```{r}
+##Identifying efficient peers
+peers(C)
+```
+
+```{r}
+##Calculating lambda values
+lambda(C)
+```
+
+
+
+```{r}
+####Plotting DEA results
+ dea.plot(x,y,RTS="vrs",ORIENTATION="in-out",txt=rownames(x))
+```
+
+```{r}
+##Performing IRS DEA analysis
+D<-dea(x,y,RTS="irs")
+D
+```
+
+```{r}
+##Identifying efficient peers
+ peers(D)
+```
+
+```{r}
+##Calculating lambda values
+lambda(D)
+```
+
+
+```{r}
+####Plotting DEA results
+ dea.plot(x,y,RTS="irs",ORIENTATION="in-out",txt=rownames(x))
+```
+
+
+```{r}
+##Performing DRS DEA analysis
+ E<-dea(x,y,RTS="drs")
+ E
+```
+
+```{r}
+##Identifying efficient peers
+ peers(E)
+```
+
+```{r}
+##Calculating lambda values
+lambda(E)
+```
+
+
+```{r}
+####Plotting DEA results
+ dea.plot(x,y,RTS="drs",ORIENTATION="in-out",txt=rownames(x))
+```
+
+
+```{r}
+##Performing Additive DEA analysis
+ F<-dea(x,y,RTS="add")
+ F
+```
+
+```{r}
+##Identifying efficient peers
+ peers(F)
+```
+
+```{r}
+##Calculating lambda values
+lambda(F)
+```
+
+```{r}
+### Creating input and output matrices for DEA analysis
+x <- matrix(c(150, 400, 320, 520, 350, 320,
+ 0.2, 0.7, 1.2, 2.0 , 1.2, 0.7), ncol = 2,
+ dimnames = list(paste("Facility", 1:6), c("Staff_Hours_per_day", "Supplies_per_day")))
+ y <- matrix(c(14000, 14000, 42000, 28000, 19000, 14000, # Reimbursed_patient_days
+ 3500, 21000, 10500, 42000, 25000, 15000), # Privately_paid_patient_days
+ ncol = 2, dimnames = list(paste("Facility", 1:6),
+ c("Reimbursed_patient_days", "Privately_paid_patient_days")))
+```
+
+
+```{r}
+### Calculating efficiency scores for different DEA models
+ A<-dea(x, y, 'fdh')
+ B<-dea(x, y, 'crs')
+ C<-dea(x, y, 'vrs')
+ D<-dea(x, y, 'irs')
+ E<-dea(x, y, 'drs')
+ F<-dea(x, y, 'add')
+ effs<-data.frame(Facility=seq(6),
+ FDH=A$eff,
+ CRS=B$eff,
+ VRS=C$eff,
+ IRS=D$eff,
+ DRS=E$eff,
+ FRH=F$eff)
+ 
+effs
+```
+The table showcases the efficiency scores of six healthcare facilities, calculated using various DEA models. Facilities 1, 2, and 4 consistently exhibit high efficiency across all models, signifying optimal resource management and efficient scale. Conversely, Facility 6 consistently scores below 1.0, indicating potential inefficiencies. Facilities 3 and 5 display variable efficiency levels across different models, suggesting that their efficiency might be influenced by scale. Analyzing these efficiency scores can guide healthcare organizations in identifying areas for improvement and optimizing resource allocation within these facilities.
+
+## CONCLUSION
+
+The DEA analysis of Hope Valley Health Care Association reveals varying efficiency levels across six facilities under different model assumptions. All facilities show full efficiency under Free Disposal Hull (FDH) and Free Replicability Hull (FRH) models. However, Constant Returns to Scale (CRS), Variable Returns to Scale (VRS), Increasing Returns to Scale (IRS), and Decreasing Returns to Scale (DRS) models uncover inefficiencies in Facilities 5 and 6. Facility 5 maintains full efficiency under VRS and IRS but shows slight inefficiency (0.9775) under CRS and DRS. Facility 6 consistently demonstrates the lowest efficiency, ranging from 0.8675 (CRS and DRS) to 0.8963 (VRS and IRS). Facilities 1-4 remain fully efficient across all models. Peer identification varies by model, with CRS and DRS identifying Facilities 1, 2, and 4 as peers for inefficient units, while VRS and IRS models include Facility 5 as a peer for Facility 6. Lambda values provide insights into the composition of virtual efficient units for benchmarking. The analysis suggests potential areas for improvement, particularly for Facilities 5 and 6, in terms of scale efficiency and resource utilization.
