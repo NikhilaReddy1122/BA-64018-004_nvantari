@@ -1,0 +1,179 @@
+---
+title: "QMM_MODULE_9"
+author: "Nikhila Reddy Vantari"
+date: "2024-11-03"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#### Problem Statement:
+
+The Research and Development Division of the Emax Corporation has developed three new
+products. A decision now needs to be made on which mix of these products should be produced.
+Management wants primary consideration given to three factors: total profit, stability in the
+workforce, and achieving an increase in the company’s earnings next year from the $75 million
+achieved this year. In particular, using the units given in the following table, they want to
+Maximize Z = P - 6C - 3D, where
+P = total (discounted) profit over the life of the new products,
+C = change (in either direction) in the current level of employment,
+D = decrease (if any) in next year’s earnings from the current year’s level.
+The amount of any increase in earnings does not enter into Z, because management is concerned
+primarily with just achieving some increase to keep the stockholders happy. (It has mixed
+feelings about a large increase that then would be difficult to surpass in subsequent years.)
+The impact of each of the new products (per unit rate of production) on each of these factors is
+shown in the following table.
+
+```{r}
+##Loading libraries
+library(knitr)
+library(kableExtra)
+```
+
+```{r}
+emaxcorpo.dtfr= data.frame(Factor=c("Total Profit","Employement level","Earning next year"),
+ P=c(20,6,8),
+ Q=c(15,4,7),
+ R=c(25,5,5),
+ Goal=c("Maximize","=50",">=75"),
+ Units=c("Millions of dollars",'Hundereds of employees','Million of dollars'),
+ Penalties = c(" ", "(±)6", "-3")
+ )
+emaxcorpo.dtfr %>%
+ kable(align = "c") %>%
+ kable_classic() %>%
+ add_header_above(header = c(" "=1,"Product"=3," "=3)) %>%
+ add_header_above(header = c(" "=1,"Unit contribution"=3," "=3)) %>%
+ column_spec(1,border_right = TRUE) %>%
+ column_spec(4,border_right = TRUE) %>%
+ column_spec(5,border_right = TRUE) %>%
+ column_spec(6,border_right = TRUE)
+```
+
+#### Q-1: Define y1+ and y1-, respectively, as the amount over (if any) and the amount under (if any) the employmentlevel goal. Define y2+ and y2- in the same way for the goal regarding earnings next year. Define x1, x2, and x3 as the production rates of Products 1, 2, and 3, respectively. With these definitions, use the goal programming technique to express y1+, y1- , y2+ and y2- algebraically in terms of x1, x2, and x3. Also, express P in terms of x1, x2, and x3.
+
+### Solution.
+Employment Level (Goal = 50):
+The direction of the constraint for "Employment level" is “=,” suggesting that the company does not want to fall below or exceed this goal. Therefore, the penalty for this factor is bi-directional.
+
+Earnings Next Year (Goal ≥ 75):
+Since the company wants to avoid earning less than 75, the penalty for this factor is one-sided and only penalizes shortfalls, as falling below 75 would be considered harmful.
+
+
+Writing Equations in Deviation Form
+using the form yi= y+i + y-i
+y+1 is a positive deviation or overachievement of employment level.
+y-1 is a negative deviation or underachievement of employment level.
+y+2 is a positive deviation or overachievement of earnings next year.
+y-2 is a negative deviation or underachievement of earnings next year.
+
+
+## Objective Function
+The objective is to maximize:
+\begin{equation}
+Z = (20x_1 + 15x_2 + 25x_3) - 6(y_1^+ + y_1^-) - 3y_2^-
+\end{equation}
+
+
+
+### Employment Level
+The employment level constraint in deviation form:
+\begin{equation}
+6x_1 + 4x_2 + 5x_3 + (y_1^- - y_1^+) = 50
+\end{equation}
+
+### Earnings Next Year 
+The earnings constraint in deviation form:
+\begin{equation}
+8x_1 + 7x_2 + 5x_3 + (y_2^- - y_2^+) = 75
+\end{equation}
+
+### Non-negativity Constraints
+All variables must be non-negative:
+\begin{equation}
+x_1, x_2, x_3, y_1^+, y_1^-, y_2^+, y_2^- \geq 0
+\end{equation}
+
+
+#### Question 2. Express management’s objective function in terms of x1, x2, x3, y1+, y1- , y2+ and y2-?
+
+
+
+**Objective Function**:
+
+
+Substituting these components into equation (1):
+
+\begin{equation}
+\text{Maximize } Z = (20x_1 + 15x_2 + 25x_3) - 6(y_1^+ + y_1^-) - 3y_2^- \tag{2}
+\end{equation}
+
+Expanding the equation:
+
+\begin{equation}
+\text{Maximize } Z = 20x_1 + 15x_2 + 25x_3 - 6y_1^+ - 6y_1^- - 3y_2^- \tag{3}
+\end{equation}
+
+
+
+#### Question 3. Formulate and solve the linear programming model. What are your findings?
+
+```{r}
+library(lpSolve)
+library(lpSolveAPI)
+```
+
+```{r}
+lp <- make.lp(2, 7)
+
+# Set objective function coefficients
+# Products P, Q, R (x1, x2, x3), Employment change (+/-) (y1p, y1m), Earnings change (+/-) (y2p, y2m)
+set.objfn(lp, c(20, 15, 25, -6, -6, 0, -3))
+lp.control(lp, sense="max")
+
+# Set constraints
+set.row(lp, 1, c(6, 4, 5, -1, 1, 0, 0), indices = c(1:7))
+set.row(lp, 2, c(8, 7, 5, 0, 0, -1, 1), indices = c(1:7))
+set.rhs(lp, c(50, 75))
+set.constr.type(lp, c("=", "="))
+set.bounds(lp, lower = rep(0, 7))
+lp.rownames <- c("Employment Level", "Earnings")
+lp.colnames <- c("P", "Q", "R", "y1p", "y1m", "y2p", "y2m")
+
+# Solve the LP
+solve(lp)
+```
+
+The optimized objective function value is:
+
+```{r}
+get.objective(lp)
+```
+
+The values of the decision variables for the optimal objective function are:
+
+```{r}
+get.variables(lp)
+```
+
+#### Conclusion:
+
+After researching this topic, I have drawn the following conclusions: The Linear Programming (LP) problem was successfully addressed using the given objective function and constraints. The optimal objective value for the LP problem is 225, and the decision variable values in the optimal solution are as follows:
+
+x1 = 0
+x2 = 0
+x3 = 15
+y+1 = 25
+y-1 = 0
+y+2 = 0
+y-2 = 0
+
+
+These results indicate an optimal solution to the goal programming problem. The decision variable values provide insights into the suggested employment levels, projected earnings for the upcoming year, and any discrepancies from the set targets, all within the context of the specified constraints and penalties. The goal was to minimize deviations from the targets while accounting for the related penalties.
+
+
+
