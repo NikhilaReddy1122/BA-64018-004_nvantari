@@ -1,0 +1,126 @@
+---
+title: "nikhila_IP"
+author: "Nikhila Reddy Vantari"
+date: "2024-11-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Objective
+Minimize:
+\[
+\text{Minimize: } 775a_1 + 800a_2 + 800a_3 + 800a_4 + 800a_5 + 775a_6 + 750a_7
+\]
+
+### Constraints
+Daily worker requirements:
+\[
+\begin{align*}
+\text{Sunday: } & a_1 + a_7 \geq 18 \\
+\text{Monday: } & a_1 + a_2 \geq 27 \\
+\text{Tuesday: } & a_2 + a_3 \geq 22 \\
+\text{Wednesday: } & a_3 + a_4 \geq 26 \\
+\text{Thursday: } & a_4 + a_5 \geq 25 \\
+\text{Friday: } & a_5 + a_6 \geq 21 \\
+\text{Saturday: } & a_6 + a_7 \geq 19
+\end{align*}
+\]
+
+
+```{r}
+#Loading Libraries
+library(lpSolve)
+ library(lpSolveAPI)
+```
+
+
+```{r}
+#Creating a dataframe for the workers table
+ days_work <- matrix(c("Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday", 
+18, 27, 22, 26, 25, 21, 19), ncol = 2, byrow = F)
+ colnames(days_work) <- c("days.of.the.week","workers.required")
+ as.table(days_work)
+```
+
+```{r}
+ # Create an LP model with 0 constraints and 7 variables
+lpr <- make.lp(0, 7)
+set.objfn(lpr, c(775, 800, 800, 800, 800, 775, 750))
+set.type(lpr, columns = 1:7, type = "integer")
+lp.control(lpr, sense = 'min')
+lpr
+
+```
+```{r}
+## Adding constraints to ensure the total number of workers scheduled meets the demand for each day:
+add.constraint(lpr, c(0, 1, 1, 1, 1, 1, 0), ">=", 18) # Sunday
+add.constraint(lpr, c(0, 0, 1, 1, 1, 1, 1), ">=", 27) # Monday
+add.constraint(lpr, c(1, 0, 0, 1, 1, 1, 1), ">=", 22) # Tuesday
+add.constraint(lpr, c(1, 1, 0, 0, 1, 1, 1), ">=", 26) # Wednesday
+add.constraint(lpr, c(1, 1, 1, 0, 0, 1, 1), ">=", 25) # Thursday
+add.constraint(lpr, c(1, 1, 1, 1, 0, 0, 1), ">=", 21) # Friday
+add.constraint(lpr, c(1, 1, 1, 1, 1, 0, 0), ">=", 19) # Saturday
+```
+
+
+
+```{r}
+solve(lpr)
+lpr
+```
+
+```{r}
+ get.objective(lpr)
+```
+```{r}
+ get.variables(lpr)
+```
+
+
+```{r}
+get.constraints(lpr)
+```
+
+#### Sunday
+```{r}
+sum(get.variables(lpr)[c(2,3,4,5,6)])
+```
+#### Monday
+```{r}
+sum(get.variables(lpr)[c(3,4,5,6,7)])
+```
+
+#### Tuesday
+```{r}
+ sum(get.variables(lpr)[c(1,4,5,6,7)])
+```
+
+#### Wednesday
+```{r}
+ sum(get.variables(lpr)[c(1,2,5,6,7)])
+```
+
+#### Thursday
+```{r}
+sum(get.variables(lpr)[c(1,2,3,6,7)])
+```
+
+#### Friday
+```{r}
+sum(get.variables(lpr)[c(1,2,3,4,7)])
+```
+
+#### Saturday
+```{r}
+ sum(get.variables(lpr)[c(1:5)])
+```
+
+
+
+
+
+
